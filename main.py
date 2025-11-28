@@ -11,7 +11,7 @@ st.title("📰 Fake News Detection App")
 st.write("Choose input type and analyze whether the content seems Real or Fake.")
 
 # -----------------------------
-# LOAD PRE-TRAINED MODEL AND VECTORIZER FROM models FOLDER
+# LOAD PRE-TRAINED MODEL AND VECTORIZER FROM MODELS FOLDER
 # -----------------------------
 MODEL_PATH = os.path.join("models", "model.pkl")
 VECTORIZER_PATH = os.path.join("models", "vectorizer.pkl")
