@@ -1,6 +1,6 @@
 import streamlit as st
 import pickle
-from sklearn.feature_extraction.text import TfidfVectorizer
+
 
 st.set_page_config(page_title="Fake News Detector", page_icon="📰")
 
