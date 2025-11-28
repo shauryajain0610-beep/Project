@@ -1,23 +1,29 @@
 import streamlit as st
 import pickle
+import os
 
-
+# -----------------------------
+# PAGE CONFIG
+# -----------------------------
 st.set_page_config(page_title="Fake News Detector", page_icon="📰")
 
 st.title("📰 Fake News Detection App")
 st.write("Choose input type and analyze whether the content seems Real or Fake.")
 
 # -----------------------------
-# LOAD PRE-TRAINED MODEL AND VECTORIZER
+# LOAD PRE-TRAINED MODEL AND VECTORIZER FROM models FOLDER
 # -----------------------------
-# Ensure you have these files in the same folder:
-# - model.pkl : trained classifier (e.g., LogisticRegression, RandomForest)
-# - vectorizer.pkl : TfidfVectorizer used during training
-with open("model.pkl", "rb") as f:
-    model = pickle.load(f)
+MODEL_PATH = os.path.join("models", "model.pkl")
+VECTORIZER_PATH = os.path.join("models", "vectorizer.pkl")
 
-with open("vectorizer.pkl", "rb") as f:
-    vectorizer = pickle.load(f)
+try:
+    with open(MODEL_PATH, "rb") as f:
+        model = pickle.load(f)
+    with open(VECTORIZER_PATH, "rb") as f:
+        vectorizer = pickle.load(f)
+except FileNotFoundError:
+    st.error("❌ Model or vectorizer not found in the 'models' folder!")
+    st.stop()
 
 # -----------------------------
 # STREAMLIT INPUT AREA
