@@ -1,102 +1,67 @@
 import streamlit as st
 import pickle
-import os
+import pandas as pd
+import webbrowser
 
-# -----------------------------
-# PAGE CONFIG
-# -----------------------------
 st.set_page_config(page_title="Fake News Detector", page_icon="📰")
 
-st.title("📰 Fake News Detection App")
-st.write("Choose input type and analyze whether the content seems Real or Fake.")
+# -------------------- LOAD TRAINED MODEL --------------------
+with open("model.pkl", "rb") as file:
+    model = pickle.load(file)
 
-# -----------------------------
-# LOAD PRE-TRAINED MODEL AND VECTORIZER FROM MODELS FOLDER
-# -----------------------------
-MODEL_PATH = os.path.join("models", "model.pkl")
-VECTORIZER_PATH = os.path.join("models", "vectorizer.pkl")
+# -------------------- CLASSIFIER FUNCTION --------------------
+def predict_news(text):
+    prediction = model(text)[0]
+    return prediction
 
-try:
-    with open(MODEL_PATH, "rb") as f:
-        model = pickle.load(f)
-    with open(VECTORIZER_PATH, "rb") as f:
-        vectorizer = pickle.load(f)
-except FileNotFoundError:
-    st.error("❌ Model or vectorizer not found in the 'models' folder!")
-    st.stop()
-
-# -----------------------------
-# STREAMLIT INPUT AREA
-# -----------------------------
-st.header("📝 Select Input Type")
-choice = st.radio("Select what you want to enter:", ["Headline Only", "Full Article"])
-
-headline = ""
-article = ""
-
-if choice == "Headline Only":
-    headline = st.text_input("Enter News Headline")
-else:
-    headline = st.text_input("Headline (optional)")
-    article = st.text_area("Enter Full Article Text", height=180)
-
-# -----------------------------
-# PREDICTION LOGIC
-# -----------------------------
-if st.button("Analyze"):
-    combined_text = (headline + " " + article).strip()
-
-    if not combined_text:
-        st.warning("⚠ Please enter some text first.")
+def reasoning(prediction):
+    if prediction == "Fake":
+        return "This article shows patterns commonly found in misinformation such as exaggerated claims, emotional tone, and lack of credible sources."
     else:
-        # Transform text using the same vectorizer
-        text_vector = vectorizer.transform([combined_text])
-        prediction = model.predict(text_vector)[0]  # "FAKE" or "REAL"
-        prediction_proba = model.predict_proba(text_vector)[0]  # Optional probability
+        return "This content contains strong factual indicators and writing style similar to trusted news sources."
 
-        # -----------------------------
-        # DYNAMIC REASONING & ADVICE
-        # -----------------------------
-        if prediction.upper() == "FAKE":
-            reasoning = "The ML model predicts this news as FAKE based on patterns learned from past datasets."
-            advice = """
-            ❌ **Advice if Fake:**  
-            - Immediately verify using trusted fact-checking sites  
-            - Do NOT share this information unless verified  
-            - Look for official government or credible news sources  
-            """
-            sources = """
-            - [Alt News](https://www.altnews.in/)  
-            - [BOOM Fact Check](https://www.boomlive.in/)  
-            - [Factly](https://factly.in/)  
-            """
-            st.error("❌ FAKE NEWS")
+def advice(prediction):
+    if prediction == "Fake":
+        return "Check multiple fact-checking websites, confirm author identities, and verify references before sharing."
+    else:
+        return "Still verify with trusted sources before spreading. Stay aware and think critically."
 
-        else:
-            reasoning = "The ML model predicts this news as REAL based on learned authentic news patterns."
-            advice = """
-            ✔ **Advice if Real:**  
-            - Still check original source for any updates  
-            - Share responsibly from official/reputed outlets  
-            - Verify facts from authentic government or national agencies  
-            """
-            sources = """
-            - [Reuters Official News](https://www.reuters.com/)  
-            - [BBC News](https://www.bbc.com/)  
-            - [The Hindu](https://www.thehindu.com/)  
-            """
-            st.success("✔ REAL NEWS")
+def external_links(topic):
+    return [
+        f"https://www.google.com/search?q={topic}+news",
+        f"https://www.bbc.com/search?q={topic}",
+        f"https://www.reuters.com/site-search/?query={topic}",
+        f"https://timesofindia.indiatimes.com/topic/{topic}"
+    ]
 
-        # -----------------------------
-        # DISPLAY RESULTS
-        # -----------------------------
+# -------------------- STREAMLIT UI --------------------
+st.title("📰 Fake News Detection System")
+st.write("Enter news content and analyze if it's Real or Fake with explainable reasoning.")
+
+input_type = st.radio("Choose Input Type:", ["Headline", "Full Article"])
+
+user_text = st.text_area(f"Enter {input_type} here:")
+
+topic = st.text_input("Enter Topic / Keyword for external links (optional):")
+
+if st.button("Analyze Now"):
+    if user_text.strip() == "":
+        st.warning("Please enter some text to analyze.")
+    else:
+        prediction = predict_news(user_text)
+        st.subheader("🔍 Prediction Result")
+        st.success(f"**This news appears to be: {prediction}**")
+
         st.subheader("🧠 Reasoning")
-        st.write(reasoning)
+        st.write(reasoning(prediction))
 
-        st.subheader("💡 Smart Advice")
-        st.write(advice)
+        st.subheader("💡 Advice")
+        st.info(advice(prediction))
 
-        st.subheader("🔗 Trusted Verification Sources")
-        st.markdown(sources)
+        if topic != "":
+            st.subheader("🔗 External Verified Sources")
+            for link in external_links(topic):
+                st.markdown(f"[Open Link]({link})")
 
-        st.info("This ML-based model is trained on a Kaggle Fake vs Real News dataset for better accuracy.")
+        st.markdown("---")
+        st.markdown("### 🙏 Thank you for using the Fake News Detection App!")
